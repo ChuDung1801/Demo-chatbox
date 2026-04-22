@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CineBot — Movie AI Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #1a1a24;
+    --surface3: #22222f;
+    --border: #2a2a3a;
+    --accent: #e8c84a;
+    --accent2: #ff6b6b;
+    --accent3: #4af0c8;
+    --text: #f0eef8;
+    --text-muted: #7a7a9a;
+    --text-dim: #4a4a6a;
+    --user-bubble: #1e1e2e;
+    --bot-bubble: #14141e;
+    --glow: rgba(232,200,74,0.12);
+    --glow2: rgba(74,240,200,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* === HEADER === */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 28px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    z-index: 10;
+    flex-shrink: 0;
+  }
+
+  header::after {
+    content: '';
+    position: absolute;
+    bottom: -1px; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.5;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo {
+    width: 38px; height: 38px;
+    background: linear-gradient(135deg, var(--accent), #ff9f43);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 0 20px rgba(232,200,74,0.3);
+  }
+
+  .brand-name {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 20px;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, var(--accent), #fff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .status-dot {
+    width: 8px; height: 8px;
+    background: var(--accent3);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--accent3);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(0.8); }
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .user-selector {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 14px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    color: var(--text-muted);
+    transition: all 0.2s;
+    outline: none;
+  }
+
+  .user-selector:focus, .user-selector:hover {
+    border-color: var(--accent);
+    color: var(--text);
+  }
+
+  .user-selector option { background: var(--surface2); }
+
+  /* === MAIN LAYOUT === */
+  .main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* === SIDEBAR === */
+  .sidebar {
+    width: 260px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 20px 0;
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+
+  .sidebar-section {
+    padding: 0 16px;
+    margin-bottom: 24px;
+  }
+
+  .sidebar-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+  }
+
+  .genre-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin: 3px 3px 3px 0;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .genre-tag:hover, .genre-tag.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(232,200,74,0.08);
+  }
+
+  .quick-btn {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 10px 14px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text-muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 8px;
+  }
+
+  .quick-btn:hover {
+    background: var(--surface2);
+    border-color: var(--accent);
+    color: var(--text);
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .stat-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+  }
+
+  .stat-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .stat-label {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+
+  /* === CHAT AREA === */
+  .chat-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    scroll-behavior: smooth;
+  }
+
+  .messages::-webkit-scrollbar { width: 4px; }
+  .messages::-webkit-scrollbar-track { background: transparent; }
+  .messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* === MESSAGES === */
+  .message {
+    display: flex;
+    gap: 12px;
+    animation: msgIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  @keyframes msgIn {
+    from { opacity: 0; transform: translateY(12px) scale(0.96); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .message.user { flex-direction: row-reverse; }
+
+  .avatar {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .avatar.bot {
+    background: linear-gradient(135deg, #1a1a2e, #2a2a4a);
+    border: 1px solid var(--border);
+  }
+
+  .avatar.user {
+    background: linear-gradient(135deg, #2a1a1a, #4a2a2a);
+    border: 1px solid rgba(255,107,107,0.3);
+  }
+
+  .bubble {
+    max-width: 72%;
+    padding: 14px 18px;
+    border-radius: 16px;
+    font-size: 14px;
+    line-height: 1.65;
+  }
+
+  .bubble.bot {
+    background: var(--bot-bubble);
+    border: 1px solid var(--border);
+    border-top-left-radius: 4px;
+  }
+
+  .bubble.user {
+    background: var(--user-bubble);
+    border: 1px solid rgba(232,200,74,0.2);
+    border-top-right-radius: 4px;
+    text-align: right;
+  }
+
+  /* === MOVIE CARDS IN CHAT === */
+  .movie-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+    margin-top: 14px;
+  }
+
+  .movie-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.25s;
+    cursor: pointer;
+  }
+
+  .movie-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(232,200,74,0.1);
+  }
+
+  .movie-poster {
+    width: 100%;
+    aspect-ratio: 2/3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .movie-poster::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 60%);
+  }
+
+  .movie-info {
+    padding: 10px 12px;
+  }
+
+  .movie-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .movie-meta {
+    font-size: 11px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .rating {
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  .genre-pill {
+    background: rgba(74,240,200,0.1);
+    color: var(--accent3);
+    border: 1px solid rgba(74,240,200,0.2);
+    border-radius: 20px;
+    padding: 2px 7px;
+    font-size: 10px;
+  }
+
+  /* === TYPING INDICATOR === */
+  .typing {
+    display: flex;
+    gap: 12px;
+    animation: msgIn 0.3s ease;
+  }
+
+  .typing-dots {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 14px 18px;
+    background: var(--bot-bubble);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    border-top-left-radius: 4px;
+  }
+
+  .dot {
+    width: 7px; height: 7px;
+    background: var(--text-dim);
+    border-radius: 50%;
+    animation: dotBounce 1.2s ease-in-out infinite;
+  }
+  .dot:nth-child(2) { animation-delay: 0.2s; }
+  .dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes dotBounce {
+    0%,60%,100% { transform: translateY(0); background: var(--text-dim); }
+    30% { transform: translateY(-6px); background: var(--accent); }
+  }
+
+  /* === INPUT AREA === */
+  .input-area {
+    padding: 20px 28px;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+
+  .input-wrap {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 12px 16px;
+    transition: border-color 0.2s;
+  }
+
+  .input-wrap:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(232,200,74,0.06);
+  }
+
+  #userInput {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    resize: none;
+    max-height: 120px;
+    line-height: 1.5;
+  }
+
+  #userInput::placeholder { color: var(--text-dim); }
+
+  .send-btn {
+    width: 38px; height: 38px;
+    background: var(--accent);
+    border: none;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.2s;
+    font-size: 16px;
+  }
+
+  .send-btn:hover {
+    background: #f0d860;
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(232,200,74,0.4);
+  }
+
+  .send-btn:active { transform: scale(0.96); }
+
+  .hint {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 8px;
+    text-align: center;
+  }
+
+  /* === WELCOME === */
+  .welcome {
+    text-align: center;
+    padding: 40px 20px;
+    animation: fadeIn 0.6s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .welcome-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    filter: drop-shadow(0 0 20px rgba(232,200,74,0.4));
+  }
+
+  .welcome h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, var(--accent), var(--accent3));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .welcome p {
+    font-size: 14px;
+    color: var(--text-muted);
+    max-width: 400px;
+    margin: 0 auto 20px;
+    line-height: 1.6;
+  }
+
+  .suggestion-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+  }
+
+  .chip {
+    padding: 8px 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 13px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .chip:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(232,200,74,0.06);
+  }
+
+  /* === SCROLLBAR SIDEBAR === */
+  .sidebar::-webkit-scrollbar { width: 3px; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* loading shimmer */
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="logo">🎬</div>
+    <div>
+      <div class="brand-name">CineBot</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="status-dot"></div>
+    <select class="user-selector" id="userSelect" onchange="switchUser()">
+      <option value="">— Chọn người dùng —</option>
+    </select>
+  </div>
+</header>
+
+<div class="main">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-title">Thống kê hệ thống</div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-num" id="statMovies">0</div>
+          <div class="stat-label">Phim</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="statUsers">0</div>
+          <div class="stat-label">Người dùng</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="statGenres">0</div>
+          <div class="stat-label">Thể loại</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="statRated">0</div>
+          <div class="stat-label">Đánh giá</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-title">Thể loại nhanh</div>
+      <div id="genreTags"></div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-title">Gợi ý câu hỏi</div>
+      <button class="quick-btn" onclick="sendQuick('Gợi ý phim phù hợp với sở thích của tôi')">🎯 Phim phù hợp với tôi</button>
+      <button class="quick-btn" onclick="sendQuick('Phim hành động hay nhất hiện tại?')">💥 Phim hành động hay</button>
+      <button class="quick-btn" onclick="sendQuick('Tôi muốn xem phim tình cảm lãng mạn')">❤️ Phim tình cảm</button>
+      <button class="quick-btn" onclick="sendQuick('Phim kinh dị đáng sợ nhất?')">👻 Phim kinh dị</button>
+      <button class="quick-btn" onclick="sendQuick('Hiển thị thông tin hồ sơ người dùng của tôi')">👤 Hồ sơ của tôi</button>
+    </div>
+  </div>
+
+  <!-- CHAT -->
+  <div class="chat-area">
+    <div class="messages" id="messages">
+      <div class="welcome" id="welcomeMsg">
+        <div class="welcome-icon">🎬</div>
+        <h2>Xin chào! Tôi là CineBot</h2>
+        <p>Trợ lý AI gợi ý phim thông minh. Chọn người dùng bên trên rồi hỏi tôi bất cứ điều gì về phim!</p>
+        <div class="suggestion-chips">
+          <span class="chip" onclick="sendQuick('Gợi ý phim phù hợp với sở thích của tôi')">🎯 Phim cho tôi</span>
+          <span class="chip" onclick="sendQuick('Phim có điểm đánh giá cao nhất?')">⭐ Top phim hay</span>
+          <span class="chip" onclick="sendQuick('Phim khoa học viễn tưởng hay?')">🚀 Sci-Fi</span>
+          <span class="chip" onclick="sendQuick('Có phim hoạt hình nào không?')">🎠 Hoạt hình</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-area">
+      <div class="input-wrap">
+        <textarea id="userInput" rows="1" placeholder="Hỏi tôi về phim..." onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+        <button class="send-btn" onclick="sendMessage()">➤</button>
+      </div>
+      <div class="hint">Nhấn Enter để gửi · Shift+Enter để xuống dòng</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== DATABASE ====================
+const DB = {
+  users: [
+    { id: 1, name: "Minh Tuấn", email: "tuan@cinema.vn", avatar: "👨‍💻", favoriteGenres: ["Hành động", "Khoa học viễn tưởng", "Kinh dị"], watchHistory: [1,3,5,7,9], rating: {1:5, 3:4, 5:5, 7:3, 9:4} },
+    { id: 2, name: "Thu Hà", email: "ha@cinema.vn", avatar: "👩‍🎨", favoriteGenres: ["Tình cảm", "Hài hước", "Hoạt hình"], watchHistory: [2,4,6,8,10], rating: {2:5, 4:4, 6:5, 8:4, 10:3} },
+    { id: 3, name: "Quang Huy", email: "huy@cinema.vn", avatar: "🧑‍🚀", favoriteGenres: ["Kinh dị", "Hành động", "Tội phạm"], watchHistory: [1,2,5,11,12], rating: {1:4, 2:5, 5:4, 11:5, 12:3} },
+    { id: 4, name: "Bảo Linh", email: "linh@cinema.vn", avatar: "👩‍🔬", favoriteGenres: ["Tài liệu", "Lịch sử", "Khoa học viễn tưởng"], watchHistory: [3,6,9,13,14], rating: {3:5, 6:4, 9:5, 13:4, 14:5} },
+    { id: 5, name: "Đức Anh", email: "anh@cinema.vn", avatar: "🧑‍🎤", favoriteGenres: ["Hoạt hình", "Hài hước", "Phiêu lưu"], watchHistory: [4,8,10,15,16], rating: {4:5, 8:3, 10:4, 15:5, 16:4} },
+  ],
+  movies: [
+    { id:1,  title:"Avengers: Endgame",    year:2019, genres:["Hành động","Khoa học viễn tưởng"], rating:4.8, emoji:"⚡", description:"Siêu anh hùng Marvel tập hợp để chiến đấu chống lại Thanos." },
+    { id:2,  title:"Inception",            year:2010, genres:["Khoa học viễn tưởng","Hành động"], rating:4.9, emoji:"🌀", description:"Một tên trộm chuyên xâm nhập vào giấc mơ để đánh cắp bí mật." },
+    { id:3,  title:"Interstellar",         year:2014, genres:["Khoa học viễn tưởng","Tài liệu"], rating:4.7, emoji:"🌌", description:"Hành trình xuyên không gian để cứu nhân loại khỏi thảm họa." },
+    { id:4,  title:"Coco",                 year:2017, genres:["Hoạt hình","Tình cảm"], rating:4.6, emoji:"💀", description:"Cậu bé Miguel phiêu lưu đến thế giới người chết để tìm tổ tiên." },
+    { id:5,  title:"The Dark Knight",      year:2008, genres:["Hành động","Tội phạm"], rating:4.9, emoji:"🦇", description:"Batman đối đầu với Joker trong cuộc chiến sinh tử tại Gotham." },
+    { id:6,  title:"La La Land",           year:2016, genres:["Tình cảm","Hài hước"], rating:4.5, emoji:"🎭", description:"Chuyện tình lãng mạn giữa một nhạc sĩ jazz và nữ diễn viên tại LA." },
+    { id:7,  title:"Get Out",              year:2017, genres:["Kinh dị","Tội phạm"], rating:4.4, emoji:"😱", description:"Chàng trai da đen phát hiện bí ẩn đáng sợ sau gia đình bạn gái." },
+    { id:8,  title:"Toy Story 4",          year:2019, genres:["Hoạt hình","Phiêu lưu"], rating:4.3, emoji:"🪆", description:"Woody và các đồ chơi phiêu lưu trên hành trình mới đầy cảm xúc." },
+    { id:9,  title:"Dune",                 year:2021, genres:["Khoa học viễn tưởng","Phiêu lưu"], rating:4.7, emoji:"🏜️", description:"Paul Atreides đến hành tinh Arrakis và khám phá số phận của mình." },
+    { id:10, title:"The Grand Budapest",   year:2014, genres:["Hài hước","Tình cảm"], rating:4.5, emoji:"🏨", description:"Cuộc phiêu lưu hài hước của quản lý khách sạn danh tiếng Gustave H." },
+    { id:11, title:"Parasite",             year:2019, genres:["Tội phạm","Kinh dị"], rating:4.8, emoji:"🪲", description:"Gia đình nghèo xâm nhập vào cuộc sống xa hoa của gia đình giàu có." },
+    { id:12, title:"Joker",               year:2019, genres:["Tội phạm","Hành động"], rating:4.6, emoji:"🃏", description:"Hành trình bi thảm của Arthur Fleck trở thành tên tội phạm Joker." },
+    { id:13, title:"Apollo 13",           year:1995, genres:["Lịch sử","Tài liệu"], rating:4.4, emoji:"🚀", description:"Cuộc khủng hoảng trên tàu vũ trụ Apollo 13 và nỗ lực cứu hộ." },
+    { id:14, title:"The Martian",         year:2015, genres:["Khoa học viễn tưởng","Tài liệu"], rating:4.5, emoji:"👨‍🚀", description:"Phi hành gia Mark Watney sống sót một mình trên sao Hỏa." },
+    { id:15, title:"Spider-Man: No Way Home", year:2021, genres:["Hoạt hình","Hành động"], rating:4.7, emoji:"🕷️", description:"Spider-Man đối mặt với nhiều kẻ thù từ đa vũ trụ." },
+    { id:16, title:"Encanto",             year:2021, genres:["Hoạt hình","Tình cảm"], rating:4.4, emoji:"🌺", description:"Gia đình Madrigal với những phép màu đặc biệt ở vùng đất Colombia." },
+  ]
+};
+
+const ALL_GENRES = [...new Set(DB.movies.flatMap(m => m.genres))].sort();
+let currentUser = null;
+let conversationHistory = [];
+
+// ==================== INIT ====================
+function init() {
+  // Populate user selector
+  const sel = document.getElementById('userSelect');
+  DB.users.forEach(u => {
+    const opt = document.createElement('option');
+    opt.value = u.id;
+    opt.textContent = `${u.avatar} ${u.name}`;
+    sel.appendChild(opt);
+  });
+
+  // Stats
+  document.getElementById('statMovies').textContent = DB.movies.length;
+  document.getElementById('statUsers').textContent = DB.users.length;
+  document.getElementById('statGenres').textContent = ALL_GENRES.length;
+  const totalRatings = DB.users.reduce((a,u) => a + Object.keys(u.rating).length, 0);
+  document.getElementById('statRated').textContent = totalRatings;
+
+  // Genre tags
+  const container = document.getElementById('genreTags');
+  ALL_GENRES.forEach(g => {
+    const tag = document.createElement('span');
+    tag.className = 'genre-tag';
+    tag.textContent = g;
+    tag.onclick = () => sendQuick(`Gợi ý phim thể loại ${g}`);
+    container.appendChild(tag);
+  });
+}
+
+function switchUser() {
+  const val = document.getElementById('userSelect').value;
+  if (!val) { currentUser = null; return; }
+  currentUser = DB.users.find(u => u.id == val);
+  conversationHistory = [];
+  const msgs = document.getElementById('messages');
+  msgs.innerHTML = '';
+  addBotMessage(`Xin chào **${currentUser.avatar} ${currentUser.name}**! 👋\n\nTôi đã tải dữ liệu của bạn. Tôi thấy bạn yêu thích: **${currentUser.favoriteGenres.join(', ')}**.\n\nBạn muốn tôi gợi ý phim gì hôm nay?`);
+}
+
+// ==================== LANGCHAIN-STYLE PIPELINE ====================
+// Simulated LangChain v1.3.0 chain: PromptTemplate → LLM → OutputParser
+
+function buildSystemPrompt(user) {
+  const userContext = user ? `
+## NGƯỜI DÙNG HIỆN TẠI
+- Tên: ${user.name}
+- Thể loại yêu thích: ${user.favoriteGenres.join(', ')}
+- Đã xem: ${user.watchHistory.map(id => DB.movies.find(m=>m.id===id)?.title).join(', ')}
+- Đánh giá cao nhất: ${Object.entries(user.rating).filter(([,v])=>v>=4).map(([id]) => DB.movies.find(m=>m.id==id)?.title).filter(Boolean).join(', ')}
+` : '## CHƯA CHỌN NGƯỜI DÙNG — hỏi người dùng chọn tài khoản';
+
+  const moviesCatalog = DB.movies.map(m =>
+    `[ID:${m.id}] ${m.title} (${m.year}) | Thể loại: ${m.genres.join('/')} | Rating: ${m.rating}/5 | Mô tả: ${m.description}`
+  ).join('\n');
+
+  const usersCatalog = DB.users.map(u =>
+    `[ID:${u.id}] ${u.name} | Yêu thích: ${u.favoriteGenres.join(', ')} | Đã xem: ${u.watchHistory.length} phim`
+  ).join('\n');
+
+  return `Bạn là CineBot, trợ lý AI gợi ý phim thông minh cho hệ thống rạp chiếu phim.
+Bạn có quyền truy cập vào cơ sở dữ liệu phim và người dùng theo thời gian thực.
+Luôn trả lời bằng tiếng Việt, thân thiện và hữu ích.
+
+${userContext}
+
+## CƠ SỞ DỮ LIỆU PHIM (${DB.movies.length} phim)
+${moviesCatalog}
+
+## CƠ SỞ DỮ LIỆU NGƯỜI DÙNG (${DB.users.length} người)
+${usersCatalog}
+
+## HƯỚNG DẪN GỢI Ý
+1. Khi gợi ý phim cho người dùng: ưu tiên thể loại yêu thích, loại trừ phim đã xem, xếp theo rating.
+2. Trả lời các câu hỏi về phim dựa trên dữ liệu thực tế trong hệ thống.
+3. Khi liệt kê phim, sử dụng định dạng JSON trong tag <MOVIES>...</MOVIES> để render card đẹp:
+   Ví dụ: <MOVIES>[{"id":1},{"id":3},{"id":5}]</MOVIES>
+4. Luôn giải thích lý do gợi ý dựa trên sở thích người dùng.
+5. Nếu hỏi về hồ sơ người dùng, cung cấp thông tin chi tiết và có ích.
+6. Giới hạn gợi ý tối đa 6 phim mỗi lần.`;
+}
+
+// ==================== API CALL ====================
+async function callClaude(userMessage) {
+  const res = await fetch("http://localhost:8000/api/chat/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      session_id: `user_${currentUser?.id ?? "anon"}_session`,
+      user_id:    currentUser?.id ?? null,
+      message:    userMessage,
+    }),
+  });
+
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);  // ← thêm dòng này
+
+  const data = await res.json();
+  return { text: data.reply, movieIds: data.movie_ids };
+}
+// ==================== MESSAGE RENDERING ====================
+function parseMovieCards(text) {
+  const movieMatch = text.match(/<MOVIES>([\s\S]*?)<\/MOVIES>/);
+  let movieIds = [];
+  let cleanText = text;
+
+  if (movieMatch) {
+    try {
+      const parsed = JSON.parse(movieMatch[1]);
+      movieIds = parsed.map(m => m.id);
+    } catch(e) {}
+    cleanText = text.replace(/<MOVIES>[\s\S]*?<\/MOVIES>/, '').trim();
+  }
+  return { cleanText, movieIds };
+}
+
+function formatText(text) {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/`(.*?)`/g, '<code style="background:var(--surface3);padding:2px 6px;border-radius:4px;font-size:12px;">$1</code>')
+    .replace(/\n/g, '<br>');
+}
+
+function renderMovieCards(ids) {
+  if (!ids.length) return '';
+  const movies = ids.map(id => DB.movies.find(m => m.id === id)).filter(Boolean);
+  if (!movies.length) return '';
+
+  const cards = movies.map(m => {
+    const colors = ['#1a0a2e','#0a1a2e','#1a2e0a','#2e1a0a','#0a2e2e','#2e0a1a'];
+    const bg = colors[m.id % colors.length];
+    return `
+    <div class="movie-card">
+      <div class="movie-poster" style="background:${bg};">
+        <span style="position:relative;z-index:1;">${m.emoji}</span>
+      </div>
+      <div class="movie-info">
+        <div class="movie-title" title="${m.title}">${m.title}</div>
+        <div class="movie-meta">
+          <span class="rating">★ ${m.rating}</span>
+          <span style="color:var(--text-dim)">${m.year}</span>
+        </div>
+        <div style="margin-top:5px;">
+          ${m.genres.slice(0,1).map(g=>`<span class="genre-pill">${g}</span>`).join('')}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  return `<div class="movie-grid">${cards}</div>`;
+}
+
+function addBotMessage(text, movieIds = []) {
+  const welcomeMsg = document.getElementById('welcomeMsg');
+  if (welcomeMsg) welcomeMsg.remove();
+
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'message';
+  div.innerHTML = `
+    <div class="avatar bot">🎬</div>
+    <div class="bubble bot">
+      <div>${formatText(text)}</div>
+      ${movieIds.length ? renderMovieCards(movieIds) : ''}
+    </div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function addUserMessage(text) {
+  const welcomeMsg = document.getElementById('welcomeMsg');
+  if (welcomeMsg) welcomeMsg.remove();
+
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'message user';
+  div.innerHTML = `
+    <div class="avatar user">${currentUser ? currentUser.avatar : '👤'}</div>
+    <div class="bubble user">${formatText(text)}</div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function showTyping() {
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'typing';
+  div.id = 'typingIndicator';
+  div.innerHTML = `
+    <div class="avatar bot">🎬</div>
+    <div class="typing-dots">
+      <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+    </div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function hideTyping() {
+  const t = document.getElementById('typingIndicator');
+  if (t) t.remove();
+}
+
+// ==================== SEND ====================
+async function sendMessage() {
+  const input = document.getElementById('userInput');
+  const text = input.value.trim();
+  if (!text) return;
+
+  if (!currentUser) {
+    addUserMessage(text);
+    addBotMessage('Vui lòng **chọn người dùng** từ menu ở góc trên bên phải trước khi chat nhé! 👤');
+    input.value = '';
+    return;
+  }
+
+  input.value = '';
+  input.style.height = 'auto';
+  addUserMessage(text);
+  showTyping();
+
+  try {
+    const reply = await callClaude(text);
+    hideTyping();
+    const { cleanText, movieIds } = parseMovieCards(reply.text);
+    addBotMessage(cleanText, movieIds);
+  } catch (e) {
+    hideTyping();
+    addBotMessage('❌ Lỗi kết nối API. Vui lòng thử lại sau.' + e.message);
+    console.error(e);
+  }
+}
+
+function sendQuick(text) {
+  document.getElementById('userInput').value = text;
+  sendMessage();
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+init();
+</script>
+</body>
+</html>
